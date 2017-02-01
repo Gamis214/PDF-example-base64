@@ -6,6 +6,7 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.Environment;
+import android.os.Handler;
 import android.provider.MediaStore;
 import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AppCompatActivity;
@@ -29,11 +30,16 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
 
+import es.voghdev.pdfviewpager.library.PDFViewPager;
+import es.voghdev.pdfviewpager.library.asset.CopyAsset;
+import es.voghdev.pdfviewpager.library.asset.CopyAssetThreadImpl;
+
 public class MainActivity extends AppCompatActivity {
 
-    private Button btnViewer;
+    private Button btnViewer,button_viewPager;
     private String encodeFileToBase64Binary;
     private StringBuilder textBase64;
+    private PDFViewPager pdfViewPager;
 
     // Storage Permissions
     private static final int REQUEST_EXTERNAL_STORAGE = 1;
@@ -47,6 +53,7 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         btnViewer = (Button) findViewById(R.id.button);
+        button_viewPager = (Button) findViewById(R.id.button_viewPager);
 
         verifyStoragePermissions(this);
 
@@ -58,6 +65,17 @@ public class MainActivity extends AppCompatActivity {
                     //saveFileInDirectory();
                     //getPDF2();
                     getPDF3();
+                }catch (Exception e){
+                    e.printStackTrace();
+                }
+            }
+        });
+
+        button_viewPager.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                try{
+                    getPDF4();
                 }catch (Exception e){
                     e.printStackTrace();
                 }
@@ -77,6 +95,37 @@ public class MainActivity extends AppCompatActivity {
                     REQUEST_EXTERNAL_STORAGE
             );
         }
+    }
+
+    private void getPDF4() throws Exception{
+        //-->GETTING THE JSON WITH BASE64 PDF
+        JSONObject jsonObject = new JSONObject(jsonData.JsonResponse);
+        String base64Info = jsonObject.getString("jsonData");
+        //-->DECODE THE (BASE64 - STRING) TO ARRAY OF BYTES[]
+        byte[] pdfAsBytes = Base64.decode(base64Info, Base64.DEFAULT);
+
+        //--> **** GET THE ACCESS TO MEMORY AND CREATE FILE AND DIRECTORY **** <---///
+        Storage storage;
+        if (SimpleStorage.isExternalStorageWritable()) {
+            storage = SimpleStorage.getExternalStorage();
+        }
+        else {
+            storage = SimpleStorage.getInternalStorage(this);
+        }
+
+        if(!storage.isDirectoryExists("PDF_READER")){
+            storage.createDirectory("PDF_READER");
+        }
+
+        if (!storage.isFileExist("PDF_READER","SP.pdf")){
+            storage.createFile("PDF_READER","SP.pdf",pdfAsBytes);
+        }
+        //--> **************************************************************** <---///
+
+        //--> GET THE FILE AND SHOW IN SOME APP TO SHOW PDF
+        pdfViewPager = new PDFViewPager(this, Environment.getExternalStorageDirectory() + "/PDF_READER/SP.pdf");
+        //pdfViewPager.
+        //--> ********************************************* <--///
     }
 
     private void getPDF3() throws Exception{
@@ -105,7 +154,7 @@ public class MainActivity extends AppCompatActivity {
         //--> **************************************************************** <---///
 
         //--> GET THE FILE AND SHOW IN SOME APP TO SHOW PDF
-        File file = new File(storage + "/PDF_READER/SP.pdf");
+        File file = new File(Environment.getExternalStorageDirectory() + "/PDF_READER/SP.pdf");
         Intent testIntent = new Intent(Intent.ACTION_VIEW);
         testIntent.setType("application/pdf");
         Intent intent = new Intent();
