@@ -80,17 +80,32 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void getPDF3() throws Exception{
+        //-->GETTING THE JSON WITH BASE64 PDF
         JSONObject jsonObject = new JSONObject(jsonData.JsonResponse);
         String base64Info = jsonObject.getString("jsonData");
-
+        //-->DECODE THE (BASE64 - STRING) TO ARRAY OF BYTES[]
         byte[] pdfAsBytes = Base64.decode(base64Info, Base64.DEFAULT);
 
+        //--> **** GET THE ACCESS TO MEMORY AND CREATE FILE AND DIRECTORY **** <---///
         Storage storage;
-        storage = SimpleStorage.getExternalStorage();
-        storage.createDirectory("PDF_READER");
-        storage.createFile("PDF_READER","test2.pdf",pdfAsBytes);
+        if (SimpleStorage.isExternalStorageWritable()) {
+            storage = SimpleStorage.getExternalStorage();
+        }
+        else {
+            storage = SimpleStorage.getInternalStorage(this);
+        }
 
-        File file = new File(Environment.getExternalStorageDirectory() + "/PDF_READER/test2.pdf");
+        if(!storage.isDirectoryExists("PDF_READER")){
+            storage.createDirectory("PDF_READER");
+        }
+
+        if (!storage.isFileExist("PDF_READER","SP.pdf")){
+            storage.createFile("PDF_READER","SP.pdf",pdfAsBytes);
+        }
+        //--> **************************************************************** <---///
+
+        //--> GET THE FILE AND SHOW IN SOME APP TO SHOW PDF
+        File file = new File(storage + "/PDF_READER/SP.pdf");
         Intent testIntent = new Intent(Intent.ACTION_VIEW);
         testIntent.setType("application/pdf");
         Intent intent = new Intent();
@@ -98,6 +113,7 @@ public class MainActivity extends AppCompatActivity {
         Uri uri = Uri.fromFile(file);
         intent.setDataAndType(uri, "application/pdf");
         startActivity(intent);
+        //--> ********************************************* <--///
 
     }
 
